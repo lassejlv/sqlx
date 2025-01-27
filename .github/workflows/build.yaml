@@ -5,14 +5,14 @@ on:
     types: [created]
 
 permissions:
-  contents: write # Required for uploading release assets
-  actions: write # Required for managing workflow
-  packages: write # Required if you're also publishing packages
+  contents: write
+  actions: write
+  packages: write
 
 jobs:
   build:
     strategy:
-      fail-fast: false # Continue with other builds even if one fails
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Full git history for release notes
+          fetch-depth: 0
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -48,7 +48,7 @@ jobs:
         if: matrix.platform != 'windows'
         run: |
           cd target/release
-          chmod +x sqlx # Ensure executable bit is set
+          chmod +x sqlx
           zip -r sqlx-${{ matrix.arch }}-${{ matrix.platform }}.zip sqlx
 
       - name: Prepare Binary (Windows)
@@ -69,9 +69,10 @@ jobs:
 
   publish-release:
     needs: build
+    # Only run this job if it was a draft release
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required for publishing releases
+      contents: write
     steps:
       - name: Update Draft Release
         uses: eregon/publish-release@v1
