@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   build:
-    if: github.event.release.draft == true
     strategy:
       fail-fast: false # Continue with other builds even if one fails
       matrix:
