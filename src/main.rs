@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use std::error::Error;
 
 mod commands;
@@ -23,7 +24,7 @@ struct Session {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    dotenv::dotenv().ok().expect("could not parse .env");
+    dotenv().ok();
 
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
@@ -40,6 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some("help") => commands::help::help_command().await,
         Some("register") => commands::register::register(&pool).await,
         Some("login") => commands::login::login(&pool).await,
+        Some("logout") => commands::logout::logout(&pool).await,
         _ => commands::help::help_command().await,
     }
 

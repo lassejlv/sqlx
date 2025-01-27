@@ -1,4 +1,4 @@
-use crate::{Session, User};
+use crate::Session;
 
 use super::helpers::{check_token_file, get_token};
 
@@ -24,7 +24,7 @@ pub async fn create_session(
     user_id: i32,
     token: &str,
 ) -> Session {
-    let new_session = sqlx::query_as!(
+    sqlx::query_as!(
         Session,
         "INSERT INTO sessions (user_id, token) VALUES ($1, $2) RETURNING *",
         user_id,
@@ -32,9 +32,7 @@ pub async fn create_session(
     )
     .fetch_one(pool)
     .await
-    .unwrap();
-
-    new_session
+    .unwrap()
 }
 
 pub async fn delete_session(pool: &sqlx::Pool<sqlx::Postgres>, token: &str) {
@@ -44,15 +42,6 @@ pub async fn delete_session(pool: &sqlx::Pool<sqlx::Postgres>, token: &str) {
         .unwrap();
 }
 
-pub async fn get_user_by_email(pool: &sqlx::Pool<sqlx::Postgres>, email: &str) -> Option<User> {
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", email)
-        .fetch_optional(pool)
-        .await
-        .unwrap();
-
-    user
-}
-
 pub async fn get_current_session(pool: &sqlx::Pool<sqlx::Postgres>) -> Option<Session> {
     let exist = check_token_file().await;
 
@@ -60,8 +49,8 @@ pub async fn get_current_session(pool: &sqlx::Pool<sqlx::Postgres>) -> Option<Se
         None
     } else {
         let token = get_token().await.unwrap();
-        let session = get_session_from_token(pool, &token).await;
+        
 
-        session
+        get_session_from_token(pool, &token).await
     }
 }

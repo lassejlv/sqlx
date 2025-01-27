@@ -12,7 +12,7 @@ pub async fn ensure_app_dirs() -> std::io::Result<String> {
         )
     })?;
 
-    let app_config = base_dirs.config_dir().join(&app_name);
+    let app_config = base_dirs.config_dir().join(app_name);
     fs::create_dir_all(&app_config)?;
 
     Ok(app_config.to_string_lossy().to_string())

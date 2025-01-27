@@ -1,9 +1,16 @@
-use crate::util::helpers::hash_password;
+use crate::util::{db_helpers::get_current_session, helpers::hash_password};
 use asky::{Password, Text};
 
 use crate::User;
 
 pub async fn register(pool: &sqlx::Pool<sqlx::Postgres>) {
+    let session = get_current_session(pool).await;
+
+    if session.is_some() {
+        println!("You are already logged in");
+        return;
+    }
+
     let email = Text::new("Whats your email?").prompt().unwrap();
     let password = Password::new("Whats your password?").prompt().unwrap();
 

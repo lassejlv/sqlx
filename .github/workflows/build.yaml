@@ -1,0 +1,82 @@
+name: Release Build
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write # Required for uploading release assets
+  actions: write # Required for managing workflow
+  packages: write # Required if you're also publishing packages
+
+jobs:
+  build:
+    if: github.event.release.draft == true
+    strategy:
+      fail-fast: false # Continue with other builds even if one fails
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+          - os: macos-latest
+            platform: darwin
+            arch: x86_64
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Full git history for release notes
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build Release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
+      - name: Prepare Binary (Unix)
+        if: matrix.platform != 'windows'
+        run: |
+          cd target/release
+          chmod +x sqlx # Ensure executable bit is set
+          zip -r sqlx-${{ matrix.arch }}-${{ matrix.platform }}.zip sqlx
+
+      - name: Prepare Binary (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cd target/release
+          7z a sqlx-${{ matrix.arch }}-${{ matrix.platform }}.zip sqlx.exe
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: target/release/sqlx-${{ matrix.arch }}-${{ matrix.platform }}.zip
+          asset_name: sqlx-${{ matrix.arch }}-${{ matrix.platform }}.zip
+          asset_content_type: application/zip
+
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for publishing releases
+    steps:
+      - name: Update Draft Release
+        uses: eregon/publish-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ github.event.release.id }}
