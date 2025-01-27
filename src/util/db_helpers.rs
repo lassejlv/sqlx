@@ -1,6 +1,11 @@
 use crate::{Session, User};
 
-pub async fn get_session_from_token(pool: &sqlx::Pool<sqlx::Postgres>, token: &str) {
+use super::helpers::{check_token_file, get_token};
+
+pub async fn get_session_from_token(
+    pool: &sqlx::Pool<sqlx::Postgres>,
+    token: &str,
+) -> Option<Session> {
     let session = sqlx::query_as!(Session, "SELECT * FROM sessions WHERE token = $1", token)
         .fetch_optional(pool)
         .await
@@ -8,10 +13,10 @@ pub async fn get_session_from_token(pool: &sqlx::Pool<sqlx::Postgres>, token: &s
 
     if session.is_none() {
         println!("Session not found");
-        return;
+        return None;
     }
 
-    session.unwrap();
+    Some(session.unwrap())
 }
 
 pub async fn create_session(
@@ -46,4 +51,17 @@ pub async fn get_user_by_email(pool: &sqlx::Pool<sqlx::Postgres>, email: &str) -
         .unwrap();
 
     user
+}
+
+pub async fn get_current_session(pool: &sqlx::Pool<sqlx::Postgres>) -> Option<Session> {
+    let exist = check_token_file().await;
+
+    if !exist {
+        None
+    } else {
+        let token = get_token().await.unwrap();
+        let session = get_session_from_token(pool, &token).await;
+
+        session
+    }
 }

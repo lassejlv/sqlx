@@ -13,6 +13,13 @@ use crate::{
 pub async fn login(pool: &sqlx::Pool<sqlx::Postgres>) {
     let config_dir = ensure_app_dirs().await.unwrap();
 
+    let session = crate::util::db_helpers::get_current_session(pool).await;
+
+    if session.is_some() {
+        println!("You are already logged in");
+        return;
+    }
+
     let email = Text::new("Whats your email?").prompt().unwrap();
     let password = Password::new("Whats your password?").prompt().unwrap();
 

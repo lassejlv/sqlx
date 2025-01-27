@@ -32,3 +32,8 @@ pub async fn delete_token() -> std::io::Result<()> {
     let path = format!("{}/token.txt", ensure_app_dirs().await.unwrap());
     tokio::fs::remove_file(path).await
 }
+
+pub async fn get_token() -> std::io::Result<String> {
+    let path = format!("{}/token.txt", ensure_app_dirs().await.unwrap());
+    tokio::fs::read_to_string(path).await
+}
