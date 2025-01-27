@@ -13,6 +13,14 @@ struct User {
     avatar_url: Option<String>,
 }
 
+#[allow(dead_code)]
+#[derive(sqlx::FromRow)]
+struct Session {
+    id: i32,
+    user_id: i32,
+    token: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv::dotenv().ok().expect("could not parse .env");
@@ -21,7 +29,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = sqlx::postgres::PgPool::connect(&db_url).await?;
 
     // Apply migrations
-    sqlx::migrate!().run(&pool).await?;
+    match sqlx::migrate!().run(&pool).await {
+        Ok(_) => println!("Applied migrations"),
+        Err(e) => println!("Error applying migrations: {}", e),
+    }
 
     let command_name = std::env::args().nth(1);
 
